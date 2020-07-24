@@ -90,15 +90,37 @@
 
 // Task # 14
 
-// var ItemArr = ["cake", "biscuit", "cookie", "chips", "patty"]
-// var que = prompt("Welcome to our bakery! Please enter the item you want. :)");
-// que = que.toLowerCase();
-// var find = ItemArr.includes(que);
-// if (find == true){
-//     alert("Yes "+que+ " is available at index: "+ ItemArr.indexOf(que));
-// }
-// else{
-//     alert("Sorry! we dont have "+que);
+ const profilesByServices = async (req: Request, res: Response): Promise<Response<IProfile[]>> => {
+        const { pageSize, pageNumber } = req.query;
+        const pageNum = Number.parseInt(pageNumber as string, 10);
+        const resultsPerPage = Number.parseInt(pageSize as string, 10);
+        if (
+            Number.isNaN(pageNum) ||
+            Number.isNaN(pageSize) ||
+            pageNum < 0 ||
+            resultsPerPage < 10 ||
+            resultsPerPage > 100
+        ) {
+            res.status(400);
+            return res.send('Page number or page size is not correct');
+        }
+        const pageStart = pageNum * resultsPerPage;
+        const services: number[] = req.body;
+        const profiles = await model.paginate(
+            {
+                serviceIds: { $all: services },
+                profileType: ProfileTypesEnum.ServiceProvider,
+                profileStatus: { $gte: ProfileStatus.PublicProfileCreated },
+            },
+            { page: pageStart, limit: resultsPerPage },
+        );
+        if (!profiles) {
+            res.status(200);
+            return res.send('No profiles found for your search');
+        }
+        res.status(200);
+        return res.json(profiles.docs, profiles.total);
+    };
 // }
 
 // Task # 15
